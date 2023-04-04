@@ -18,7 +18,6 @@ public:
 
 private:
     size_t count_;
-    bool is_sending_;
     rclcpp::TimerBase::SharedPtr timer_;
     message_interfaces::msg::NodeMsg message_;
     rclcpp::Publisher<message_interfaces::msg::NodeMsg>::SharedPtr publisher_;

@@ -5,7 +5,7 @@
 
 #include <chrono>
 
-Publisher::Publisher() : Node("publisher"), count_(0), is_sending_(false) {
+Publisher::Publisher() : Node("publisher"), count_(0) {
     // create a publisher which publishes to topic my_topic
     publisher_ = this->create_publisher<message_interfaces::msg::NodeMsg>("my_topic", 10);
 }

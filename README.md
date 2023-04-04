@@ -1,4 +1,4 @@
-# Ros2 pubsub example
+# ROS2 pubsub example
 
 ROS2 simple pub-sub node with a customized message type.
 
