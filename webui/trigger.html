@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>ROS2 PubSub demo</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles -->
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+<div class="container">
+    <h1>ROS2 PubSub demo</h1>
+    <h2>Basic ros2 node web interface</h2>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-3">
+                <span>Connection</span>
+            </div>
+            <div class="col-sm">
+                <span id="status" style="font-weight: bold;">N/A</span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-3"><span>Result</span></div>
+            <div class="col-sm">
+                <span id="rosbridge_action" style="font-weight: bold;"></span>
+            </div>
+        </div>
+    </div>
+
+    <form id="robot_connect">
+        <h3>Connect to rosbridge</h3>
+
+        <div class="form-group">
+            <label for="server_addr">Server</label>
+            <input type="text" class="form-control" id="server_addr" value="127.0.0.1:9090">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Connect</button>
+    </form>
+
+    <form id="robot_control" class="invisible">
+        <h3>Publisher control</h3>
+        <div class="form-group">
+            <label for="interval_range" class="form-label">Set publish interval</label>
+            <div class="range w-50">
+                <input type="range" class="form-range" min="1000" max="30000" value="100" step="1" id="interval_range"
+                       onInput="$('#rangeval').html($(this).val() + 'ms')">
+            </div>
+            <span id="rangeval">1000ms</span>
+        </div>
+
+        <div class="form-group">
+            <label for="msg_str">Message (string)</label>
+            <input type="text" class="form-control" id="msg_str" required="required" placeholder="Enter anything">
+        </div>
+
+        <div class="form-group">
+            <label for="msg_number">Message (float number)</label>
+            <input type="number" class="form-control" id="msg_number" required="required" placeholder="Enter a number">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Go</button>
+    </form>
+
+</div> <!-- /container -->
+</body>
+<script src="js/jquery-3.6.4.min.js"></script>
+<script src="js/roslib.min.js"></script>
+
+<script type="text/javascript">
+    let ros;
+
+    // Create ros object to communicate over your Rosbridge connection
+    $("#robot_connect").submit(function (event) {
+            const server_addr = $('#server_addr').val()
+
+            ros = new ROSLIB.Ros({url: `ws://${server_addr}`});
+            // When the Rosbridge server connects, fill the span with id “status" with “successful"
+            ros.on('connection', () => {
+                $('#status').text('connected')
+                $(this).hide();
+                $('#robot_control').removeClass("invisible");
+            });
+
+            // When the Rosbridge server experiences an error, fill the “status" span with the returned error
+            ros.on('error', (error) => {
+                $('#status').text(`errored out (${error})`)
+            });
+
+            // When the Rosbridge server shuts down, fill the “status" span with “closed"
+            ros.on('close', () => {
+                $('#status').text('closed')
+            });
+
+            event.preventDefault();
+        }
+    );
+
+    $("#robot_control").submit(function (event) {
+        // get all the inputs
+        const interval = $('#interval_range').val()
+        const msg_str = $('#msg_str').val()
+        const msg_number = $('#msg_number').val()
+
+        // Calling a service
+        // -----------------
+        var startClient = new ROSLIB.Service({
+            ros: ros,
+            name: '/start',
+            serviceType: 'message_interfaces/srv/StartTalker'
+        });
+
+        const request = new ROSLIB.ServiceRequest({
+            msg: msg_str,
+            number: parseFloat(msg_number),
+            rate: parseFloat(interval)
+        });
+
+        let serviceCalled = false;
+        startClient.callService(request, function (result) {
+            serviceCalled = true
+            $('#rosbridge_action').text(`Result for service call on ${startClient.name}: ${result.is_ok}`)
+        });
+
+        if (!serviceCalled) {
+            $('#rosbridge_action').text(`Failed to call ${startClient.name}, please check rosbridge websocket`)
+        }
+
+        event.preventDefault();
+    });
+</script>
+</html>

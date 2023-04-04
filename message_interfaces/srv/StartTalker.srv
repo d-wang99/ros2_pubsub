@@ -1,0 +1,6 @@
+string msg
+float64 number
+int32 rate
+---
+bool is_ok
+string msg
